@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Document Q&A Chatbot</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; }
+        .container { max-width: 700px; margin: auto; }
+        .chatbox { background: #f9f9f9; padding: 1em; border-radius: 8px; margin-bottom: 1em; }
+        .question { font-weight: bold; }
+        .answer { margin-bottom: 1em; }
+        .citations { font-size: 0.95em; color: #555; }
+        .confidence { font-size: 0.95em; color: #888; }
+        textarea { width: 100%; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Ask Questions About Your PDF</h2>
+        {% if history %}
+            <div class="chatbox">
+                <h3>Conversation History:</h3>
+                {% for msg in history %}
+                    {% if msg.role == "user" %}
+                        <div class="question">User: {{ msg.text }}</div>
+                    {% else %}
+                        <div class="answer">Assistant: {{ msg.text }}</div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+        <form action="/ask" method="post" enctype="multipart/form-data">
+            <label>Upload PDF:</label><br>
+            <input type="file" name="file" accept="application/pdf" required><br><br>
+            <label>Questions (one per line):</label><br>
+            <textarea name="questions" rows="5" placeholder="Enter your questions here..." required></textarea><br><br>
+            <button type="submit">Ask</button>
+        </form>
+        {% if results %}
+            <div class="chatbox">
+                <h3>Results:</h3>
+                {% for item in results %}
+                    <div class="question">Q: {{ item.question }}</div>
+                    <div class="answer">A: {{ item.answer }}</div>
+                    {% if item.citations %}
+                        <div class="citations">Citations: {{ item.citations | join(', ') }}</div>
+                    {% endif %}
+                    <div class="confidence">Confidence: {{ '%.2f' % item.confidence }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>

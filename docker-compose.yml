@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  llm-server:
+    image: ollama/ollama:latest
+    container_name: llm-server
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rag-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rag-app
+    ports:
+      - "8000:8000"
+    environment:
+      - OLLAMA_BASE_URL=http://llm-server:11434
+    depends_on:
+      llm-server:
+        condition: service_healthy
+    volumes:
+      - ./app:/app
+
+volumes:
+  ollama_data:
