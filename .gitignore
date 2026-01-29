@@ -1,0 +1,9 @@
+*.pyc
+*.sqlite3
+*.bin
+*.pickle
+data/
+__pycache__/
+chroma_db/
+.env
+.vscode/
