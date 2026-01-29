@@ -14,8 +14,17 @@ from langchain_community.vectorstores import Chroma
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain.memory import ConversationBufferMemory
+from langchain_classic.memory import ConversationBufferMemory
 from langgraph.graph import StateGraph, END
+
+from typing import List, TypedDict
+
+class RAGState(TypedDict):
+    question: str
+    context: str
+    citations: List[str]
+    confidence: float
+
 
 CHROMA_PATH = "./chroma_db"
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://llm-server:11434")
@@ -90,18 +99,18 @@ def create_langgraph_chain(
 
     def retrieve_node(state):
         question = state["question"]
-        docs_and_scores = retriever.get_relevant_documents(question)
+        # docs_and_scores = retriever.invoke(question)
+        docs_and_scores = vector_store.similarity_search_with_score(question, k=3)
         if not docs_and_scores:
             return {"question": question, "context": "", "citations": [], "confidence": 0.0}
         context_chunks = []
         citations = []
         scores = []
-        for doc in docs_and_scores:
+        for doc, score in docs_and_scores:
             context_chunks.append(doc.page_content)
             page = doc.metadata.get("page", "unknown")
             citations.append(f"Page {page}")
-            if hasattr(doc, "score"):
-                scores.append(doc.score)
+            scores.append(score)
         confidence = max(scores) if scores else 0.0
         context = "\n\n".join(context_chunks)
         return {
@@ -145,7 +154,7 @@ def create_langgraph_chain(
             "confidence": confidence
         }
 
-    workflow = StateGraph()
+    workflow = StateGraph(RAGState)
     workflow.add_node("retrieve", retrieve_node)
     workflow.add_node("llm", llm_node)
     workflow.set_entry_point("retrieve")

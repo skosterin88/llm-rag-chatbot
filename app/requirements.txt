@@ -3,7 +3,11 @@ uvicorn
 jinja2
 python-multipart
 langchain
+langchain-classic
 langchain-community
 langchain-ollama
 langchain-core
 langgraph
+pypdf
+sentence-transformers
+chromadb
